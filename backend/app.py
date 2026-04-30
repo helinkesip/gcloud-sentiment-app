@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
 from google.cloud import language_v1
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/analyze", methods=["POST"])
 def analyze():

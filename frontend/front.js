@@ -1,93 +1,95 @@
-// Arka planda uçuşan harf efekti
+// Arka plan animasyonu
 function createFloatingChars() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}[]<>/";
-    const container = document.body;
-
+    const container = document.getElementById('bg-canvas') || document.body;
     setInterval(() => {
         const char = document.createElement('span');
         char.className = 'floating-char';
         char.innerText = chars[Math.floor(Math.random() * chars.length)];
-        
         const startPos = Math.random() * window.innerWidth;
         const size = Math.random() * 20 + 10;
         const duration = Math.random() * 10 + 5;
-
         char.style.left = startPos + 'px';
         char.style.top = window.innerHeight + 'px';
         char.style.fontSize = size + 'px';
         char.style.animation = `floatUp ${duration}s linear forwards`;
-
         container.appendChild(char);
-
         setTimeout(() => char.remove(), duration * 1000);
-    }, 400);
+    }, 450);
 }
-
 createFloatingChars();
 
-// Analiz Fonksiyonu
-function analizEt() {
+// Karakter Sayacı
+const textarea = document.getElementById('comment-input');
+if(textarea) {
+    textarea.addEventListener('input', (e) => {
+        document.querySelector('.char-count').innerText = `${e.target.value.length} / 500`;
+    });
+}
+
+// ANALİZ FONKSİYONU
+async function analizEt() {
     const input = document.getElementById('comment-input').value;
     const btnText = document.getElementById('btn-text');
     const resultCard = document.getElementById('result-container');
-    
+    const analyzeBtn = document.getElementById('analyze-btn');
+
     if (input.trim().length < 5) {
-        alert("Lütfen biraz daha uzun bir metin yazın.");
+        alert("Lütfen biraz daha uzun bir cümle yazın.");
         return;
     }
 
-    // Buton Yükleniyor Durumu
+    // Yükleniyor durumu
     btnText.innerText = "Analiz Ediliyor...";
-    document.getElementById('analyze-btn').disabled = true;
+    analyzeBtn.disabled = true;
 
-    // Simüle edilmiş gecikme (API çağrısı taklidi)
-    setTimeout(() => {
-        const sentimentScore = Math.floor(Math.random() * 100);
-        const toxicityScore = Math.floor(Math.random() * 30); // Genelde düşük tutalım :)
+    try {
+        const response = await fetch('http://127.0.0.1:5001/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: input })
+        });
 
-        showResults(sentimentScore, toxicityScore);
-        
+        const data = await response.json();
+
+        if (response.ok) {
+            // GİZLİ KARTI GÖSTER
+            resultCard.classList.remove('hidden');
+            resultCard.style.display = 'block'; // CSS'teki hidden bazen inatçı olabilir
+
+            // Skoru hesapla (-1 to 1  => 0 to 100)
+            const sentimentPercent = Math.round((data.score + 1) * 50);
+            
+            // UI Güncelle
+            document.getElementById('sentiment-percent').innerText = sentimentPercent + '%';
+            document.getElementById('sentiment-score-bar').style.width = sentimentPercent + '%';
+            
+            const summary = document.getElementById('result-text-summary');
+            const sLabel = document.getElementById('sentiment-label');
+            const sIcon = document.getElementById('sentiment-icon');
+
+            if (data.score > 0.1) {
+                sLabel.innerText = "Pozitif";
+                sIcon.className = "fas fa-smile status-positive";
+                summary.innerText = "Harika! Bu metin çok olumlu bir enerji yayıyor.";
+            } else if (data.score < -0.1) {
+                sLabel.innerText = "Negatif";
+                sIcon.className = "fas fa-frown status-negative";
+                summary.innerText = "Dikkat! Bu metinde olumsuz bir ton saptandı.";
+            } else {
+                sLabel.innerText = "Nötr";
+                sIcon.className = "fas fa-meh status-neutral";
+                summary.innerText = "Bu metin oldukça dengeli ve objektif görünüyor.";
+            }
+
+            // Scroll yap
+            resultCard.scrollIntoView({ behavior: 'smooth' });
+        }
+    } catch (error) {
+        console.error("Hata:", error);
+        alert("Backend ile bağlantı kurulamadı!");
+    } finally {
         btnText.innerText = "Analizi Başlat";
-        document.getElementById('analyze-btn').disabled = false;
-        resultCard.classList.remove('hidden');
-        resultCard.scrollIntoView({ behavior: 'smooth' });
-    }, 1500);
-}
-
-function showResults(sentiment, toxicity) {
-    // Duygu Güncelleme
-    const sBar = document.getElementById('sentiment-score-bar');
-    const sLabel = document.getElementById('sentiment-label');
-    const sIcon = document.getElementById('sentiment-icon');
-    const sPercent = document.getElementById('sentiment-percent');
-
-    sBar.style.width = sentiment + '%';
-    sPercent.innerText = sentiment + '%';
-
-    if (sentiment > 50) {
-        sLabel.innerText = "Pozitif";
-        sIcon.className = "fas fa-smile status-positive";
-        sBar.className = "score-bar bg-positive";
-    } else {
-        sLabel.innerText = "Negatif";
-        sIcon.className = "fas fa-frown status-negative";
-        sBar.className = "score-bar bg-negative";
+        analyzeBtn.disabled = false;
     }
-
-    // Toksiklik Güncelleme
-    const tBar = document.getElementById('toxicity-score-bar');
-    const tPercent = document.getElementById('toxicity-percent');
-    tBar.style.width = (100 - toxicity) + '%';
-    tPercent.innerText = toxicity + '%';
-
-    const summary = document.getElementById('result-text-summary');
-    summary.innerText = sentiment > 50 
-        ? "Bu metin genel olarak yapıcı ve olumlu bir dil içeriyor." 
-        : "Bu metinde eleştirel veya olumsuz bir ton saptandı.";
 }
-
-// Karakter Sayacı
-document.getElementById('comment-input').addEventListener('input', function(e) {
-    const count = e.target.value.length;
-    document.querySelector('.char-count').innerText = `${count} / 500`;
-});
