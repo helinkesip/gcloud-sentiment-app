@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akıllı Yorum Analizi | Duygu & Toksiklik Tespiti</title>
+    <!-- Google Fonts'tan modern bir yazı tipi ekleyelim (Poiret One ve Lato) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Poiret+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="main-container">
+        <!-- Başlık Bölümü -->
+        <header class="app-header">
+            <h1>Akıllı Yorum Analizi</h1>
+            <p>Yazılan yorumun duygusunu ve toksik olup olmadığını anında tespit edin.</p>
+        </header>
+
+        <!-- Giriş ve Kontrol Alanı -->
+        <section class="analysis-section">
+            <div class="input-card">
+                <textarea id="comment-input" placeholder="Lütfen analiz etmek istediğiniz yorumu buraya yazın..."></textarea>
+                <div class="action-bar">
+                    <button id="analyze-btn" onclick="analizEt()">
+                        <span id="btn-text">Analiz Et</span>
+                        <div id="loader" class="loader hidden"></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sonuç Alanı (Başlangıçta Gizli) -->
+            <div id="result-container" class="result-card hidden">
+                <h2>Analiz Sonucu</h2>
+                
+                <div class="results-grid">
+                    <!-- Duygu Skoru -->
+                    <div class="result-item sentiment">
+                        <h3>Duygu</h3>
+                        <div id="sentiment-icon" class="icon positive"></div>
+                        <p id="sentiment-label">Pozitif</p>
+                        <div class="score-bar-bg">
+                            <div id="sentiment-score-bar" class="score-bar positive" style="width: 85%"></div>
+                        </div>
+                        <span id="sentiment-percent">85%</span>
+                    </div>
+
+                    <!-- Toksiklik Skoru -->
+                    <div class="result-item toxicity">
+                        <h3>Toksiklik</h3>
+                        <div id="toxicity-icon" class="icon clear"></div>
+                        <p id="toxicity-label">Temiz</p>
+                        <div class="score-bar-bg">
+                            <div id="toxicity-score-bar" class="score-bar clear" style="width: 95%"></div>
+                        </div>
+                        <span id="toxicity-percent">95%</span>
+                    </div>
+                </div>
+
+                <div class="result-explanation">
+                    <p id="result-text-summary">Bu yorum son derece olumlu ve yapıcı görünüyor.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Alt Bilgi -->
+        <footer class="app-footer">
+            <p>GCloud Natural Language API ile güçlendirilmiştir.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
