@@ -1,3 +1,18 @@
+
+
+const tx = document.getElementById('comment-input');
+if(tx) {
+    tx.addEventListener("input", function() {
+        // Her harf girildiğinde yüksekliği sıfırlayıp içeriğe göre yeniden hesaplıyoruz
+        this.style.height = "auto";
+        this.style.height = (this.scrollHeight) + "px";
+        
+        // Karakter sayacını güncelleme (zaten sende vardı ama burada kalsın)
+        document.querySelector('.char-count').innerText = `${this.value.length} / 500`;
+    });
+}
+
+
 // Arka plan animasyonu ve karakter sayacı kısımlarına dokunmuyoruz, onlar zaten harika çalışıyor.
 function createFloatingChars() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}[]<>/";
@@ -48,13 +63,17 @@ async function analizEt() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: input })
         });
+        
 
         const data = await response.json();
 
         if (response.ok) {
             resultCard.classList.remove('hidden');
             resultCard.style.display = 'block';
-
+            const rawCodeArea = document.getElementById('raw-response-code');
+            if (rawCodeArea) {
+                rawCodeArea.textContent = JSON.stringify(data, null, 2);
+            }
             // 1. DUYGU DURUMU HESAPLAMA
             const sentimentPercent = Math.round((data.score + 1) * 50);
             document.getElementById('sentiment-percent').innerText = sentimentPercent + '%';
@@ -76,48 +95,49 @@ async function analizEt() {
             const sLabel = document.getElementById('sentiment-label');
             const sIcon = document.getElementById('sentiment-icon');
 
-            // 1. Teknik Terimlerle Sentiment Güncelleme
-            if (data.score > 0.1) {
-                sLabel.innerText = "POZİTİF (Müşteri Memnuniyeti Yüksek)";
-                sIcon.className = "fas fa-check-circle status-positive";
-            } else if (data.score < -0.1) {
-                sLabel.innerText = "NEGATİF (Müşteri Memnuniyeti Düşük)";
-                sIcon.className = "fas fa-exclamation-circle status-negative";
+            // front.js içindeki mantığı şu şekilde güncelle:
+
+            if (data.score > 0.25) { 
+                sLabel.innerText = "POZİTİF (Memnun)";
+                sIcon.className = "fas fa-smile status-positive";
+            } else if (data.score < -0.25) { 
+                sLabel.innerText = "NEGATİF (Memnun Değil)";
+                sIcon.className = "fas fa-frown status-negative";
             } else {
-                sLabel.innerText = "NÖTR (Objektif Veri)";
-                sIcon.className = "fas fa-info-circle status-neutral";
+                // "Beğenmedim" gibi kısa ve net olmayan duygular buraya düşer
+                sLabel.innerText = "NÖTR / ELEŞTİREL"; 
+                sIcon.className = "fas fa-meh status-neutral";
             }
 
             // 2. SaaS Tipi Karar Kutusu
             const auditID = Math.random().toString(36).substr(2, 9).toUpperCase();
 
             // 2. Kurumsal Moderasyon Karar Kutusu
-            if (safetyPercent < 65) {
+            // --- GÜNCELLENMİŞ GÜVENLİK (MODERASYON) MANTIĞI ---
+
+            if (safetyPercent < 40) { // Sadece GERÇEKTEN riskli içeriklerde (küfür, hakaret) durdur
                 tLabel.innerText = "POLİTİKA İHLALİ";
-                tBar.style.backgroundColor = "#e74c3c"; // Daha profesyonel bir kırmızı
+                tBar.style.backgroundColor = "#c0392b";
                 
                 summary.innerHTML = `
                     <div style="background: rgba(192, 57, 43, 0.08); border-left: 4px solid #c0392b; padding: 15px; border-radius: 4px; margin-top: 10px;">
-                        <strong style="color: #c0392b; display: block; margin-bottom: 5px;">🚫 REPORT: İçerik Filtreye Takıldı</strong>
+                        <strong style="color: #c0392b; display: block; margin-bottom: 5px;">🚫 REPORT: İçerik Reddedildi</strong>
                         <p style="font-size: 0.85rem; color: #444; margin: 0;">
-                            <strong>AI Kararı:</strong> Bu yorum, e-ticaret topluluk standartlarını ihlal eden unsurlar (saldırganlık veya uygunsuz dil) barındırmaktadır. Otomatik yayın engellendi.
+                            <strong>AI Kararı:</strong> Bu içerik, topluluk kurallarını ihlal eden (saldırganlık veya nefret söylemi) unsurlar içerdiği için otomatik olarak engellenmiştir.
                         </p>
-                        <div style="margin-top: 8px; font-size: 0.75rem; color: #888;">Audit ID: #${auditID} | Status: Rejected</div>
                     </div>
                 `;
-            } else {
+            } else { // %40 ve üzeri "Güvenli" kabul edilsin (Eleştiriler buraya düşer)
                 tLabel.innerText = "UYGUNLUK ONAYLANDI";
-                tBar.style.backgroundColor = "#2ecc71"; // Kurumsal yeşil
+                tBar.style.backgroundColor = "#27ae60";
                 
                 summary.innerHTML = `
                     <div style="background: rgba(39, 174, 96, 0.08); border-left: 4px solid #27ae60; padding: 15px; border-radius: 4px; margin-top: 10px;">
                         <strong style="color: #27ae60; display: block; margin-bottom: 5px;">✅ REPORT: Denetim Başarılı</strong>
                         <p style="font-size: 0.85rem; color: #444; margin: 0;">
-                            <strong>AI Kararı:</strong> İçerik, platform politikalarına tam uyum sağlamaktadır. Sistemsel yayın onayı verildi.
-                        </p>
-                        <div style="margin-top: 8px; font-size: 0.75rem; color: #888;">Audit ID: #${auditID} | Status: Approved</div>
-                    </div>
-                `;
+                            <strong>AI Kararı:</strong> İçerik, platform politikalarına uygundur. Negatif geri bildirimler dahil olmak üzere yayın onayı verildi.
+                        </div>
+                    `;
             }
             // --- YENİLENMİŞ YORUMDENET AI AKILLI NOT MOTORU ---
             let aiAdvice = "";
@@ -158,5 +178,16 @@ async function analizEt() {
     } finally {
         btnText.innerText = "Analizi Başlat";
         analyzeBtn.disabled = false;
+    }
+}
+
+// Analiz başarılı olduğunda fetch içindeki data'yı buraya bas:
+document.getElementById('raw-response-code').textContent = JSON.stringify(data, null, 2);
+
+function toggleJson() {
+    const viewer = document.getElementById('json-viewer');
+    if (viewer) {
+        // 'hidden' class'ı yerine 'show' class'ı ile kontrol etmek daha sağlamdır
+        viewer.classList.toggle('show');
     }
 }
